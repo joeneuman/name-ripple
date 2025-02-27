@@ -1,0 +1,88 @@
+{
+  "lists": [
+    {
+      "id": 1,
+      "name": "Adjectives",
+      "words": [
+        "cool",
+        "awesome",
+        "smart",
+        "bright",
+        "quick",
+        "easy",
+        "fresh",
+        "good",
+        "happy",
+        "swift",
+        "clever",
+        "bold",
+        "prime",
+        "super",
+        "ultra"
+      ]
+    },
+    {
+      "id": 2,
+      "name": "Tech Words",
+      "words": [
+        "tech",
+        "code",
+        "app",
+        "web",
+        "dev",
+        "byte",
+        "data",
+        "cloud",
+        "cyber",
+        "net",
+        "bit",
+        "soft",
+        "stack",
+        "node",
+        "api"
+      ]
+    },
+    {
+      "id": 3,
+      "name": "Business Words",
+      "words": [
+        "pro",
+        "biz",
+        "corp",
+        "hub",
+        "lab",
+        "team",
+        "work",
+        "sync",
+        "flow",
+        "peak",
+        "lead",
+        "edge",
+        "core",
+        "plus",
+        "max"
+      ]
+    },
+    {
+      "id": 4,
+      "name": "Creative Words",
+      "words": [
+        "art",
+        "mind",
+        "idea",
+        "spark",
+        "wave",
+        "flex",
+        "flux",
+        "nova",
+        "zen",
+        "vibe",
+        "echo",
+        "pulse",
+        "soul",
+        "dash",
+        "leap"
+      ]
+    }
+  ]
+} 
