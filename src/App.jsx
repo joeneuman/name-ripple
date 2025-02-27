@@ -262,54 +262,21 @@ function App() {
     
     setIsGenerating(true)
     try {
-      const response = await fetch('https://api.openai.com/v1/completions', {
+      const response = await fetch('http://localhost:3000/api/generate-words', {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_OPENAI_API_KEY}`
+          'Content-Type': 'application/json'
         },
-        body: JSON.stringify({
-          model: "gpt-3.5-turbo-instruct",
-          prompt: `SYSTEM: You will generate exactly 20 words related to "${baseWord}". You must follow these rules exactly:
-1. Output format must be exactly like this, with no deviations:
-Abode
-Manor
-Cottage
-
-2. DO NOT add ANY:
-- Numbers
-- Bullet points
-- Prefixes
-- Formatting
-- Explanations
-
-3. ONLY output the words, one per line.
-
-OUTPUT:`,
-          max_tokens: 200,
-          temperature: 0.7
-        })
+        body: JSON.stringify({ baseWord: baseWord.trim() })
       })
 
       if (!response.ok) {
         const errorData = await response.json()
-        const errorMessage = errorData.error?.message || 'API request failed'
-        
-        // Check for quota exceeded error
-        if (errorMessage.includes('quota') || errorMessage.includes('exceeded')) {
-          throw new Error('API quota exceeded. Please check your OpenAI account billing status at platform.openai.com/account/billing')
-        }
-        
-        throw new Error(errorMessage)
+        throw new Error(errorData.error || 'Failed to generate words')
       }
 
       const data = await response.json()
-      if (!data.choices?.[0]?.text) {
-        throw new Error('No suggestions received from API')
-      }
-
-      const words = data.choices[0].text.trim().split('\n').filter(word => word.trim())
-      if (words.length === 0) {
+      if (!data.words || data.words.length === 0) {
         throw new Error('No valid words generated')
       }
       
@@ -317,7 +284,7 @@ OUTPUT:`,
       const newList = {
         id: newId,
         name: `${capitalize(baseWord)} Related`,
-        words: words
+        words: data.words
       }
       
       setWordLists(prev => [...prev, newList])
@@ -521,8 +488,32 @@ OUTPUT:`,
                 <button className="close-modal" onClick={() => setShowListManager(false)}>×</button>
               </div>
               
-              <div className="upload-section">
-                <h3>Add New List</h3>
+              <div className="ai-section">
+                <h3>AI Generate Word List</h3>
+                <div className="ai-inputs">
+                  <input
+                    type="text"
+                    placeholder="Enter a word to generate related words"
+                    value={baseWord}
+                    onChange={(e) => setBaseWord(e.target.value)}
+                    className="base-word-input"
+                  />
+                  <button 
+                    className="generate-list-button" 
+                    onClick={() => generateWordList('first')}
+                    disabled={isGenerating}
+                  >
+                    {isGenerating ? 'Generating...' : 'AI Generate'}
+                  </button>
+                </div>
+              </div>
+
+              <div className="section-divider">
+                <span>OR</span>
+              </div>
+
+              <div className="manual-section">
+                <h3>Add New List Manually</h3>
                 <div className="list-actions">
                   <input
                     type="text"
@@ -531,19 +522,16 @@ OUTPUT:`,
                     onChange={(e) => setNewListName(e.target.value)}
                     className="list-name-input"
                   />
-                  <button className="generate-list-button" onClick={generateCombinations}>
-                    Generate Combinations
-                  </button>
                 </div>
-                
+
                 <div className="input-methods">
                   <div className="paste-section">
                     <h4>Paste Words</h4>
                     <textarea
                       placeholder="Paste words here, one per line"
-                      className="word-paste"
                       value={pastedWords}
                       onChange={(e) => setPastedWords(e.target.value)}
+                      className="word-paste"
                     />
                   </div>
                   
@@ -564,7 +552,11 @@ OUTPUT:`,
                   </div>
                 </div>
 
-                <button className="add-list-button" onClick={handleAddList}>
+                <button 
+                  className="add-list-button" 
+                  onClick={handleAddList}
+                  disabled={!newListName.trim() || !pastedWords.trim()}
+                >
                   Add List
                 </button>
               </div>
@@ -574,7 +566,7 @@ OUTPUT:`,
                 <ul>
                   {wordLists.map(list => (
                     <li key={list.id} className="list-item">
-                      <div>
+      <div>
                         <strong>{list.name}</strong>
                         <span className="word-count">({list.words.length} words)</span>
                       </div>
@@ -598,7 +590,7 @@ OUTPUT:`,
               <div className="modal-header">
                 <h2>Menu</h2>
                 <button className="close-modal" onClick={() => setShowMenu(false)}>×</button>
-              </div>
+      </div>
               
               <div className="menu-items">
                 <button 
@@ -610,13 +602,13 @@ OUTPUT:`,
                 >
                   <span className="menu-item-icon">📝</span>
                   Manage Word Lists
-                </button>
+        </button>
               </div>
             </div>
           </div>
         )}
       </main>
-    </div>
+      </div>
   )
 }
 

@@ -413,26 +413,64 @@ header p {
 }
 
 .input-methods {
-  display: grid;
-  grid-template-columns: 1fr auto 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 1rem;
-  align-items: start;
+  margin: 1rem 0;
 }
 
-.paste-section, .file-section {
+.ai-section {
   background: #f8fafc;
-  padding: 1rem;
-  border-radius: 4px;
+  padding: 1.5rem;
+  border-radius: 8px;
+  margin-bottom: 1.5rem;
 }
 
-.or-divider {
+.section-divider {
   display: flex;
   align-items: center;
   justify-content: center;
-  height: 100%;
+  text-align: center;
   color: #64748b;
-  font-size: 0.875rem;
-  padding: 0 1rem;
+  font-size: 1rem;
+  margin: 2rem 0;
+}
+
+.section-divider::before,
+.section-divider::after {
+  content: '';
+  flex: 1;
+  border-top: 2px solid #e2e8f0;
+  margin: 0 1rem;
+}
+
+.manual-section {
+  background: #f8fafc;
+  padding: 1.5rem;
+  border-radius: 8px;
+}
+
+.paste-section,
+.file-section {
+  background: white;
+  padding: 1rem;
+  border-radius: 4px;
+  border: 1px solid #e2e8f0;
+}
+
+.ai-inputs {
+  display: flex;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.base-word-input {
+  width: 100%;
+  padding: 0.5rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 4px;
+  font-size: 1rem;
+  margin-bottom: 0.5rem;
 }
 
 .word-paste {
@@ -443,6 +481,84 @@ header p {
   border-radius: 4px;
   resize: vertical;
   font-family: inherit;
+  margin-top: 0.5rem;
+}
+
+.or-divider {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  color: #64748b;
+  font-size: 0.875rem;
+  margin: 1rem 0;
+}
+
+.or-divider::before,
+.or-divider::after {
+  content: '';
+  flex: 1;
+  border-top: 1px solid #e2e8f0;
+  margin: 0 0.5rem;
+}
+
+.generate-list-button {
+  background: #059669;
+  color: white;
+  border: none;
+  padding: 0.5rem 1rem;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 0.875rem;
+  white-space: nowrap;
+  transition: background-color 0.2s;
+}
+
+.generate-list-button:hover:not(:disabled) {
+  background: #047857;
+}
+
+.generate-list-button:disabled {
+  background: #9ca3af;
+  cursor: not-allowed;
+}
+
+@media (prefers-color-scheme: dark) {
+  .ai-section,
+  .manual-section {
+    background: #1e293b;
+  }
+
+  .paste-section,
+  .file-section {
+    background: #334155;
+    border-color: #475569;
+  }
+
+  .section-divider {
+    color: #94a3b8;
+  }
+
+  .section-divider::before,
+  .section-divider::after {
+    border-color: #475569;
+  }
+
+  .base-word-input,
+  .word-paste {
+    background: #334155;
+    color: #f1f5f9;
+    border-color: #475569;
+  }
+
+  .or-divider {
+    color: #94a3b8;
+  }
+
+  .or-divider::before,
+  .or-divider::after {
+    border-color: #475569;
+  }
 }
 
 .existing-lists {
@@ -708,36 +824,17 @@ header p {
 
 /* Remove unused AI generate styles */
 .ai-generate {
-  display: none;
-}
-
-.base-word-input {
-  display: none;
+  /* display: none; */
 }
 
 .generate-list {
-  display: none;
+  /* display: none; */
 }
 
 .list-separator {
-  display: none;
-}
-
-@media (prefers-color-scheme: dark) {
-  .base-word-input {
-    background: #334155;
-    color: #f1f5f9;
-    border-color: #475569;
-  }
-
-  .list-separator {
-    color: #94a3b8;
-  }
-
-  .list-separator::before,
-  .list-separator::after {
-    background: #475569;
-  }
+  margin: 1rem 0;
+  text-align: center;
+  color: #64748b;
 }
 
 .list-actions {
