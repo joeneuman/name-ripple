@@ -114,6 +114,44 @@ route.get('/api/ripple/jobs/:id', (req, res) => {
   res.json(job);
 });
 
+// ---------- Shortlist (starred names + three-criteria rubric) ----------
+route.get('/api/shortlist', (req, res) => res.json(get().shortlist));
+
+route.post('/api/shortlist', (req, res) => {
+  const domain = String(req.body.domain || '').trim().toLowerCase();
+  if (!/^[a-z0-9-]+\.[a-z]{2,}$/.test(domain)) return res.status(400).json({ error: 'Invalid domain' });
+  const db = get();
+  if (db.shortlist.some((s) => s.domain === domain)) return res.status(409).json({ error: 'Already shortlisted' });
+  const entry = {
+    domain,
+    display: String(req.body.display || domain),
+    addedAt: new Date().toISOString(),
+    criteria: { unique: false, positive: false, memorable: false },
+  };
+  db.shortlist.unshift(entry);
+  save();
+  res.json(entry);
+});
+
+route.post('/api/shortlist/:domain/criteria', (req, res) => {
+  const db = get();
+  const entry = db.shortlist.find((s) => s.domain === req.params.domain.toLowerCase());
+  if (!entry) return res.status(404).json({ error: 'Not on shortlist' });
+  const { key, value } = req.body;
+  if (!['unique', 'positive', 'memorable'].includes(key)) return res.status(400).json({ error: 'Unknown criterion' });
+  entry.criteria[key] = Boolean(value);
+  save();
+  res.json(entry);
+});
+
+route.delete('/api/shortlist/:domain', (req, res) => {
+  const db = get();
+  const before = db.shortlist.length;
+  db.shortlist = db.shortlist.filter((s) => s.domain !== req.params.domain.toLowerCase());
+  save();
+  res.json({ removed: before - db.shortlist.length });
+});
+
 // ---------- Finds + scan control ----------
 route.get('/api/finds', (req, res) => res.json(get().finds.slice(0, 500)));
 route.get('/api/scanlog', (req, res) => res.json(get().scanLog));

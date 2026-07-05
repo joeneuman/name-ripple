@@ -20,6 +20,9 @@ const DEFAULTS = {
   ],
   // Available domains discovered by any scan. {domain, source, foundAt, confirmedBy}
   finds: [],
+  // Names starred from Ripple results, evaluated against the three-criteria rubric.
+  // {domain, display, addedAt, criteria: {unique, positive, memorable}}
+  shortlist: [],
   // Rotating cursor into the 4-letter space (index into base-26 enumeration)
   fourLetterCursor: 0,
   scanLog: [], // {at, watchlistChecked, threeChecked, fourChecked, fiveChecked, candidates, confirmedAvailable, durationMs}

@@ -246,6 +246,50 @@ td.mono { letter-spacing: 0.02em; }
   display: inline-flex; gap: 6px; align-items: center;
 }
 
+/* ---------- Shortlist stars ---------- */
+.star {
+  background: none;
+  border: none;
+  color: var(--brass-deep);
+  font-size: 16px;
+  line-height: 1;
+  padding: 0 2px;
+  cursor: pointer;
+}
+.star.starred { color: var(--stamp-amber); cursor: default; }
+.find .star { align-self: flex-start; }
+.find.available { flex-direction: row; align-items: center; gap: 7px; }
+.find.available .name { display: flex; flex-direction: column; }
+.all-three {
+  color: var(--stamp-green);
+  font-weight: 700;
+  letter-spacing: -0.05em;
+}
+#shortlist-table input[type="checkbox"] { accent-color: var(--stamp-green); width: 16px; height: 16px; }
+
+/* ---------- Guide article ---------- */
+.guide { max-width: 68ch; padding-bottom: 26px; }
+.guide h3 {
+  font-family: var(--head);
+  font-variant: small-caps;
+  letter-spacing: 0.05em;
+  font-size: 17px;
+  margin: 22px 0 6px;
+}
+.guide p, .guide li { font-family: var(--ui); font-size: 14.5px; line-height: 1.65; }
+.guide ol { padding-left: 22px; }
+.guide li { margin-bottom: 10px; }
+.guide ul { margin-top: 6px; }
+.guide ul li { margin-bottom: 4px; }
+.guide em { font-style: italic; }
+.guide a { color: var(--brass-deep); }
+.guide-footer {
+  margin-top: 24px;
+  padding-top: 14px;
+  border-top: 1px dashed var(--card-edge);
+  color: var(--soft);
+}
+
 /* ---------- Word list manager ---------- */
 #list-form { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-bottom: 18px; }
 #list-form input { width: 100%; max-width: 340px; }

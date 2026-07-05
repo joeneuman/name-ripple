@@ -63,7 +63,7 @@ $('#scan-now').addEventListener('click', async () => {
 });
 
 function findChip(f) {
-  return `<span class="find available"><span class="name">${esc(f.domain)}</span><span class="src">${esc(f.source)} · ${esc((f.foundAt || '').slice(0, 10))}</span></span>`;
+  return `<span class="find available"><span class="name">${esc(f.domain)}<span class="src">${esc(f.source)} · ${esc((f.foundAt || '').slice(0, 10))}</span></span></span>`;
 }
 
 async function refreshFinds() {
@@ -172,8 +172,28 @@ function renderRipple() {
   const shown = availOnly ? rippleResults.filter((r) => r.status === 'available') : rippleResults;
   $('#ripple-results').innerHTML = shown.map((r) => {
     const cls = r.status === 'available' ? 'available' : r.status === 'registered' ? 'registered' : 'unknown';
-    return `<span class="find ${cls}"><span class="name">${esc(rippleDisplay[r.domain] || r.domain)}</span></span>`;
+    const starred = shortlisted.has(r.domain);
+    const star = r.status === 'available'
+      ? `<button class="star${starred ? ' starred' : ''}" data-star="${esc(r.domain)}" title="${starred ? 'On shortlist' : 'Add to shortlist'}" ${starred ? 'disabled' : ''}>${starred ? '★' : '☆'}</button>`
+      : '';
+    return `<span class="find ${cls}">${star}<span class="name">${esc(rippleDisplay[r.domain] || r.domain)}</span></span>`;
   }).join('') || '<span class="quiet">No results' + (availOnly ? ' available' : '') + '.</span>';
+
+  document.querySelectorAll('#ripple-results [data-star]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      const domain = btn.dataset.star;
+      try {
+        await api('/shortlist', {
+          method: 'POST',
+          body: JSON.stringify({ domain, display: rippleDisplay[domain] || domain }),
+        });
+      } catch (err) {
+        if (!/Already/.test(err.message)) return alert(err.message);
+      }
+      await refreshShortlist();
+      renderRipple();
+    });
+  });
 }
 
 $('#ripple-available-only').addEventListener('change', renderRipple);
@@ -225,10 +245,47 @@ $('#ripple-go').addEventListener('click', async () => {
   }
 });
 
+// ---------- Shortlist ----------
+let shortlisted = new Set();
+
+async function refreshShortlist() {
+  const list = await api('/shortlist');
+  shortlisted = new Set(list.map((s) => s.domain));
+
+  const CRITERIA = ['unique', 'positive', 'memorable'];
+  $('#shortlist-table tbody').innerHTML = list.map((s) => {
+    const passes = CRITERIA.filter((k) => s.criteria[k]).length;
+    return `<tr>
+      <td class="mono">${esc(s.display)}${passes === 3 ? ' <span class="all-three" title="Passes all three">✓✓✓</span>' : ''}</td>
+      ${CRITERIA.map((k) => `<td><input type="checkbox" data-crit="${k}" data-domain="${esc(s.domain)}" ${s.criteria[k] ? 'checked' : ''}></td>`).join('')}
+      <td>${esc((s.addedAt || '').slice(0, 10))}</td>
+      <td><button class="danger" data-unstar="${esc(s.domain)}">remove</button></td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="6" class="quiet">Nothing starred yet — run a Ripple check and star the names that make you pause.</td></tr>';
+
+  document.querySelectorAll('#shortlist-table [data-crit]').forEach((box) => {
+    box.addEventListener('change', async () => {
+      await api('/shortlist/' + encodeURIComponent(box.dataset.domain) + '/criteria', {
+        method: 'POST',
+        body: JSON.stringify({ key: box.dataset.crit, value: box.checked }),
+      });
+      refreshShortlist();
+    });
+  });
+  document.querySelectorAll('#shortlist-table [data-unstar]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      await api('/shortlist/' + encodeURIComponent(btn.dataset.unstar), { method: 'DELETE' });
+      await refreshShortlist();
+      renderRipple();
+    });
+  });
+}
+
 // ---------- Boot ----------
 refreshFinds();
 refreshScanLog();
 refreshWatchlist();
 refreshLists();
+refreshShortlist();
 refreshScanStatus();
 setInterval(refreshScanStatus, 5000);
