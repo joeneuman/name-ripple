@@ -223,16 +223,21 @@ $('#ripple-go').addEventListener('click', async () => {
 
   // The original Name Ripple combination logic: First+Second, concatenated, plus TLD.
   // Checked lowercase (DNS is case-insensitive); displayed as CapitalizedWords for readability.
+  // Optional max length applies to the name itself, not the TLD.
+  const maxLen = Number($('#ripple-maxlen').value) || Infinity;
   const combos = [];
+  let skipped = 0;
   rippleDisplay = {};
   for (const a of first.words) for (const b of second.words) {
+    if (a.length + b.length > maxLen) { skipped++; continue; }
     const lower = (a + b + tld).toLowerCase();
     combos.push(lower);
     rippleDisplay[lower] = cap(a) + cap(b) + tld;
   }
+  if (combos.length === 0) return alert(`Every combination is longer than ${maxLen} letters — raise the max length.`);
 
   $('#ripple-go').disabled = true;
-  $('#ripple-progress').textContent = `Checking ${combos.length} combinations…`;
+  $('#ripple-progress').textContent = `Checking ${combos.length} combinations…` + (skipped ? ` (${skipped} skipped as too long)` : '');
   rippleResults = [];
   renderRipple();
 
