@@ -11,70 +11,15 @@
   <h1>URL <span>Scoop</span></h1>
   <p class="tagline">Daily drop-watcher &amp; Name Ripple combo checker</p>
   <nav>
-    <button data-tab="dashboard" class="active">Dashboard</button>
-    <button data-tab="watchlist">Watchlist</button>
-    <button data-tab="ripple">Ripple</button>
-    <button data-tab="shortlist">Shortlist</button>
-    <button data-tab="lists">Word Lists</button>
+    <button data-tab="ripple" class="active">Ripple</button>
+    <button data-tab="scan">Daily Scan</button>
     <button data-tab="guide">Guide</button>
   </nav>
 </header>
 
 <main>
-  <!-- ============ DASHBOARD ============ -->
-  <section id="tab-dashboard" class="tab active">
-    <div class="grid2">
-      <div class="card">
-        <h2>Quick check</h2>
-        <form id="quickcheck-form" class="row-form">
-          <input id="quickcheck-input" placeholder="anydomain.com" autocomplete="off">
-          <button type="submit">Check</button>
-        </form>
-        <div id="quickcheck-result" class="quiet"></div>
-      </div>
-      <div class="card">
-        <h2>Daily scan</h2>
-        <div id="scan-status" class="quiet">Loading…</div>
-        <button id="scan-now" class="secondary">Run scan now</button>
-      </div>
-    </div>
-
-    <div class="card">
-      <h2>Available finds <span id="finds-count" class="pill"></span></h2>
-      <p class="quiet">Everything below returned 404 from registry RDAP — genuinely available at last check. Register fast; drops get re-caught.</p>
-      <div id="finds" class="finds"></div>
-    </div>
-
-    <div class="card">
-      <h2>Scan history</h2>
-      <p class="quiet">The middle columns count how many domains each scan <em>checked</em>. "Found available" is how many of those came back open to register — they appear in the tray above.</p>
-      <table id="scanlog">
-        <thead><tr><th>When</th><th>Watchlist checked</th><th>3-letter checked</th><th>4-letter checked</th><th>5-letter checked</th><th>Found available</th><th>Took</th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- ============ WATCHLIST ============ -->
-  <section id="tab-watchlist" class="tab">
-    <div class="card">
-      <h2>Watched domains</h2>
-      <p class="quiet">Checked against registry RDAP every day. You'll get the digest email the day one drops.</p>
-      <form id="watch-form" class="row-form">
-        <input id="watch-domain" placeholder="atozion.com" autocomplete="off">
-        <input id="watch-note" placeholder="note (optional)">
-        <button type="submit">Watch</button>
-      </form>
-      <div id="watch-error" class="error"></div>
-      <table id="watchlist-table">
-        <thead><tr><th>Domain</th><th>Status</th><th>Expires</th><th>Registrar</th><th>Note</th><th></th></tr></thead>
-        <tbody></tbody>
-      </table>
-    </div>
-  </section>
-
-  <!-- ============ RIPPLE ============ -->
-  <section id="tab-ripple" class="tab">
+  <!-- ============ RIPPLE: tool + shortlist + word lists ============ -->
+  <section id="tab-ripple" class="tab active">
     <div class="card">
       <h2>Name Ripple</h2>
       <p class="quiet">Pick two word lists and a TLD. Every First+Second combination gets checked — DNS first, then registry RDAP to confirm real availability.</p>
@@ -102,22 +47,16 @@
       <div id="ripple-progress" class="quiet"></div>
       <div id="ripple-results" class="finds"></div>
     </div>
-  </section>
 
-  <!-- ============ SHORTLIST ============ -->
-  <section id="tab-shortlist" class="tab">
     <div class="card">
       <h2>Shortlist</h2>
-      <p class="quiet">Names you starred from Ripple results. Judge each against the three questions that matter — a great name passes all three. The <b>Evaluate</b> button asks an AI to stress-test the name first: sound-alikes, negative connotations, brand collisions, memorability. The checkboxes stay yours. (Re-verify availability before you buy.)</p>
+      <p class="quiet">Names you starred from the results above. Judge each against the three questions that matter — a great name passes all three. The <b>Evaluate</b> button asks an AI to stress-test the name first: sound-alikes, negative connotations, brand collisions, memorability. The checkboxes stay yours. (Re-verify availability before you buy.)</p>
       <table id="shortlist-table">
         <thead><tr><th>Name</th><th>Unique?</th><th>Positive response?</th><th>Memorable?</th><th>Added</th><th></th></tr></thead>
         <tbody></tbody>
       </table>
     </div>
-  </section>
 
-  <!-- ============ WORD LISTS ============ -->
-  <section id="tab-lists" class="tab">
     <div class="card">
       <h2>Word lists</h2>
       <div class="ai-generate">
@@ -138,6 +77,55 @@
     </div>
   </section>
 
+  <!-- ============ DAILY SCAN: scan + watchlist + finds ============ -->
+  <section id="tab-scan" class="tab">
+    <div class="grid2">
+      <div class="card">
+        <h2>Quick check</h2>
+        <form id="quickcheck-form" class="row-form">
+          <input id="quickcheck-input" placeholder="anydomain.com" autocomplete="off">
+          <button type="submit">Check</button>
+        </form>
+        <div id="quickcheck-result" class="quiet"></div>
+      </div>
+      <div class="card">
+        <h2>Daily scan</h2>
+        <div id="scan-status" class="quiet">Loading…</div>
+        <button id="scan-now" class="secondary">Run scan now</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Watched domains</h2>
+      <p class="quiet">Checked as part of every daily scan. You'll get the digest email the day one drops.</p>
+      <form id="watch-form" class="row-form">
+        <input id="watch-domain" placeholder="atozion.com" autocomplete="off">
+        <input id="watch-note" placeholder="note (optional)">
+        <button type="submit">Watch</button>
+      </form>
+      <div id="watch-error" class="error"></div>
+      <table id="watchlist-table">
+        <thead><tr><th>Domain</th><th>Status</th><th>Expires</th><th>Registrar</th><th>Note</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+
+    <div class="card">
+      <h2>Available finds <span id="finds-count" class="pill"></span></h2>
+      <p class="quiet">Everything below returned 404 from registry RDAP — genuinely available at last check. Register fast; drops get re-caught.</p>
+      <div id="finds" class="finds"></div>
+    </div>
+
+    <div class="card">
+      <h2>Scan history</h2>
+      <p class="quiet">The middle columns count how many domains each scan <em>checked</em>. "Found available" is how many of those came back open to register — they appear in the tray above.</p>
+      <table id="scanlog">
+        <thead><tr><th>When</th><th>Watchlist checked</th><th>3-letter checked</th><th>4-letter checked</th><th>5-letter checked</th><th>Found available</th><th>Took</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
   <!-- ============ GUIDE ============ -->
   <section id="tab-guide" class="tab">
     <article class="card guide">
@@ -146,8 +134,8 @@
 
       <h3>The method</h3>
       <ol>
-        <li><strong>Make two word lists.</strong> One list of feeling-words you want attached to your business (happy, bold, swift…), one list of words for what you actually do (for us: every synonym for <em>house</em> we could find). Put them in the Word Lists tab.</li>
-        <li><strong>Combine everything against everything.</strong> That's the Ripple tab. eBay, Facebook, Starbucks — famous names are mostly just two words that had never met. The tool checks every combination against the domain registry, because a great name you can't own isn't a great name.</li>
+        <li><strong>Make two word lists.</strong> One list of feeling-words you want attached to your business (happy, bold, swift…), one list of words for what you actually do (for us: every synonym for <em>house</em> we could find). Put them in the word-list manager at the bottom of the Ripple tab.</li>
+        <li><strong>Combine everything against everything.</strong> That's the generator at the top of the Ripple tab. eBay, Facebook, Starbucks — famous names are mostly just two words that had never met. The tool checks every combination against the domain registry, because a great name you can't own isn't a great name.</li>
         <li><strong>Read the survivors out loud.</strong> Not in your head — out loud. A name lives in conversation, not on a screen. We did this for ten days. It's tedious. Do it anyway.</li>
         <li><strong>Star the ones that make you pause</strong> and judge them on the shortlist against three questions we learned from a naming firm (their name suggestions were mediocre; their rubric was gold):
           <ul>
