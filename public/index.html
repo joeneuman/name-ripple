@@ -1,0 +1,120 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>URL Scoop</title>
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <h1>URL <span>Scoop</span></h1>
+  <p class="tagline">Daily drop-watcher &amp; Name Ripple combo checker</p>
+  <nav>
+    <button data-tab="dashboard" class="active">Dashboard</button>
+    <button data-tab="watchlist">Watchlist</button>
+    <button data-tab="ripple">Ripple</button>
+    <button data-tab="lists">Word Lists</button>
+  </nav>
+</header>
+
+<main>
+  <!-- ============ DASHBOARD ============ -->
+  <section id="tab-dashboard" class="tab active">
+    <div class="grid2">
+      <div class="card">
+        <h2>Quick check</h2>
+        <form id="quickcheck-form" class="row-form">
+          <input id="quickcheck-input" placeholder="anydomain.com" autocomplete="off">
+          <button type="submit">Check</button>
+        </form>
+        <div id="quickcheck-result" class="quiet"></div>
+      </div>
+      <div class="card">
+        <h2>Daily scan</h2>
+        <div id="scan-status" class="quiet">Loading…</div>
+        <button id="scan-now" class="secondary">Run scan now</button>
+      </div>
+    </div>
+
+    <div class="card">
+      <h2>Available finds <span id="finds-count" class="pill"></span></h2>
+      <p class="quiet">Everything below returned 404 from registry RDAP — genuinely available at last check. Register fast; drops get re-caught.</p>
+      <div id="finds" class="finds"></div>
+    </div>
+
+    <div class="card">
+      <h2>Scan history</h2>
+      <table id="scanlog">
+        <thead><tr><th>When</th><th>Watchlist</th><th>3-letter</th><th>4-letter</th><th>5-letter</th><th>Found</th><th>Took</th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ WATCHLIST ============ -->
+  <section id="tab-watchlist" class="tab">
+    <div class="card">
+      <h2>Watched domains</h2>
+      <p class="quiet">Checked against registry RDAP every day. You'll get the digest email the day one drops.</p>
+      <form id="watch-form" class="row-form">
+        <input id="watch-domain" placeholder="atozion.com" autocomplete="off">
+        <input id="watch-note" placeholder="note (optional)">
+        <button type="submit">Watch</button>
+      </form>
+      <div id="watch-error" class="error"></div>
+      <table id="watchlist-table">
+        <thead><tr><th>Domain</th><th>Status</th><th>Expires</th><th>Registrar</th><th>Note</th><th></th></tr></thead>
+        <tbody></tbody>
+      </table>
+    </div>
+  </section>
+
+  <!-- ============ RIPPLE ============ -->
+  <section id="tab-ripple" class="tab">
+    <div class="card">
+      <h2>Name Ripple</h2>
+      <p class="quiet">Pick two word lists and a TLD. Every First+Second combination gets checked — DNS first, then registry RDAP to confirm real availability.</p>
+      <div class="ripple-pickers">
+        <div>
+          <label for="ripple-first">First word</label>
+          <select id="ripple-first"></select>
+        </div>
+        <div>
+          <label for="ripple-second">Second word</label>
+          <select id="ripple-second"></select>
+        </div>
+        <div>
+          <label for="ripple-tld">Domain</label>
+          <select id="ripple-tld">
+            <option>.com</option><option>.net</option><option>.io</option><option>.app</option>
+            <option>.dev</option><option>.ai</option><option>.tech</option><option>.co</option>
+          </select>
+        </div>
+      </div>
+      <div class="actions-row">
+        <button id="ripple-go">Generate &amp; check</button>
+        <label class="check-label"><input type="checkbox" id="ripple-available-only"> available only</label>
+      </div>
+      <div id="ripple-progress" class="quiet"></div>
+      <div id="ripple-results" class="finds"></div>
+    </div>
+  </section>
+
+  <!-- ============ WORD LISTS ============ -->
+  <section id="tab-lists" class="tab">
+    <div class="card">
+      <h2>Word lists</h2>
+      <form id="list-form">
+        <input id="list-name" placeholder="List name">
+        <textarea id="list-words" placeholder="One word per line"></textarea>
+        <button type="submit">Add list</button>
+      </form>
+      <div id="lists-container"></div>
+    </div>
+  </section>
+</main>
+
+<script src="app.js"></script>
+</body>
+</html>
