@@ -137,7 +137,9 @@ app.use(BASE || '/', route);
 if (BASE) app.get('/', (req, res) => res.redirect(BASE + '/'));
 
 // ---------- Cron ----------
-const schedule = process.env.CRON_SCHEDULE || '15 6 * * *';
+// Default: 19:30 UTC — just after Verisign's daily ~11am-2pm ET deletion batch,
+// in both daylight-saving seasons. Override with CRON_SCHEDULE.
+const schedule = process.env.CRON_SCHEDULE || '30 19 * * *';
 cron.schedule(schedule, () => {
   console.log(`[cron] daily scan starting (${new Date().toISOString()})`);
   runDailyScan().then((r) => console.log('[cron] scan done:', JSON.stringify(r))).catch((err) => console.error('[cron] scan failed:', err));
