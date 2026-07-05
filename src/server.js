@@ -12,6 +12,11 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
 app.use(express.json({ limit: '2mb' }));
 
+// Serve under a subpath (e.g. BASE_PATH=/nameripple behind nginx at hackbed.com/nameripple).
+// All routes below are defined on `route` and mounted at BASE. Frontend uses relative URLs.
+const BASE = (process.env.BASE_PATH || '').replace(/\/+$/, '');
+const route = express.Router();
+
 // Optional basic auth (set AUTH_USER/AUTH_PASS in .env before exposing publicly)
 if (process.env.AUTH_USER) {
   app.use((req, res, next) => {
@@ -22,12 +27,12 @@ if (process.env.AUTH_USER) {
   });
 }
 
-app.use(express.static(path.join(__dirname, '..', 'public')));
+route.use(express.static(path.join(__dirname, '..', 'public')));
 
 // ---------- Watchlist ----------
-app.get('/api/watchlist', (req, res) => res.json(get().watchlist));
+route.get('/api/watchlist', (req, res) => res.json(get().watchlist));
 
-app.post('/api/watchlist', async (req, res) => {
+route.post('/api/watchlist', async (req, res) => {
   const domain = String(req.body.domain || '').trim().toLowerCase();
   if (!/^[a-z0-9-]+\.[a-z]{2,}$/.test(domain)) return res.status(400).json({ error: 'Enter a valid domain like atozion.com' });
   const db = get();
@@ -40,7 +45,7 @@ app.post('/api/watchlist', async (req, res) => {
   res.json(entry);
 });
 
-app.delete('/api/watchlist/:domain', (req, res) => {
+route.delete('/api/watchlist/:domain', (req, res) => {
   const db = get();
   const before = db.watchlist.length;
   db.watchlist = db.watchlist.filter((w) => w.domain !== req.params.domain.toLowerCase());
@@ -49,9 +54,9 @@ app.delete('/api/watchlist/:domain', (req, res) => {
 });
 
 // ---------- Word lists (Name Ripple) ----------
-app.get('/api/lists', (req, res) => res.json(get().wordLists));
+route.get('/api/lists', (req, res) => res.json(get().wordLists));
 
-app.post('/api/lists', (req, res) => {
+route.post('/api/lists', (req, res) => {
   const { name, words } = req.body;
   if (!name?.trim() || !Array.isArray(words) || words.length === 0) {
     return res.status(400).json({ error: 'Need a list name and at least one word' });
@@ -64,7 +69,7 @@ app.post('/api/lists', (req, res) => {
   res.json(list);
 });
 
-app.delete('/api/lists/:id', (req, res) => {
+route.delete('/api/lists/:id', (req, res) => {
   const db = get();
   db.wordLists = db.wordLists.filter((l) => l.id !== Number(req.params.id));
   save();
@@ -76,7 +81,7 @@ app.delete('/api/lists/:id', (req, res) => {
 // candidates; client polls for progress. Jobs live in memory.
 const jobs = new Map();
 
-app.post('/api/ripple/jobs', (req, res) => {
+route.post('/api/ripple/jobs', (req, res) => {
   const domains = [...new Set((req.body.domains || []).map((d) => String(d).trim().toLowerCase()).filter((d) => /^[a-z0-9-]+\.[a-z]{2,}$/.test(d)))];
   if (domains.length === 0) return res.status(400).json({ error: 'No valid domains' });
   if (domains.length > 5000) return res.status(400).json({ error: 'Max 5000 combos per run' });
@@ -103,18 +108,18 @@ app.post('/api/ripple/jobs', (req, res) => {
   res.json({ jobId: id });
 });
 
-app.get('/api/ripple/jobs/:id', (req, res) => {
+route.get('/api/ripple/jobs/:id', (req, res) => {
   const job = jobs.get(req.params.id);
   if (!job) return res.status(404).json({ error: 'Job not found (expired?)' });
   res.json(job);
 });
 
 // ---------- Finds + scan control ----------
-app.get('/api/finds', (req, res) => res.json(get().finds.slice(0, 500)));
-app.get('/api/scanlog', (req, res) => res.json(get().scanLog));
-app.get('/api/scan/status', (req, res) => res.json(scanStatus()));
+route.get('/api/finds', (req, res) => res.json(get().finds.slice(0, 500)));
+route.get('/api/scanlog', (req, res) => res.json(get().scanLog));
+route.get('/api/scan/status', (req, res) => res.json(scanStatus()));
 
-app.post('/api/scan/run', (req, res) => {
+route.post('/api/scan/run', (req, res) => {
   const status = scanStatus();
   if (status.running) return res.status(409).json({ error: 'Scan already running' });
   runDailyScan().catch((err) => console.error('manual scan failed:', err));
@@ -122,11 +127,14 @@ app.post('/api/scan/run', (req, res) => {
 });
 
 // Quick one-off check (used by the dashboard's "check a domain" box)
-app.get('/api/check/:domain', async (req, res) => {
+route.get('/api/check/:domain', async (req, res) => {
   const domain = req.params.domain.toLowerCase();
   if (!/^[a-z0-9-]+\.[a-z]{2,}$/.test(domain)) return res.status(400).json({ error: 'Invalid domain' });
   res.json(await checkDomain(domain));
 });
+
+app.use(BASE || '/', route);
+if (BASE) app.get('/', (req, res) => res.redirect(BASE + '/'));
 
 // ---------- Cron ----------
 const schedule = process.env.CRON_SCHEDULE || '15 6 * * *';
@@ -137,5 +145,5 @@ cron.schedule(schedule, () => {
 
 const port = Number(process.env.PORT) || 3100;
 app.listen(port, () => {
-  console.log(`URL Scoop running on http://localhost:${port} — daily scan at cron "${schedule}"`);
+  console.log(`URL Scoop running on http://localhost:${port}${BASE || ''} — daily scan at cron "${schedule}"`);
 });

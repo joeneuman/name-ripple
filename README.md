@@ -34,32 +34,39 @@ npm run scan           # trigger one full scan from the CLI
 
 Data lives in `data/db.json` (gitignored). No database server needed.
 
-## Deploy on DigitalOcean
+## Deploy on the DigitalOcean project server (hackbed.com/nameripple)
+
+DNS: point an A record for `hackbed.com` at the droplet (143.198.105.249).
 
 ```bash
 # on the droplet
-git clone https://github.com/joeneuman/urlscoop.git
-cd urlscoop
+git clone -b urlscoop https://github.com/joeneuman/name-ripple.git nameripple
+cd nameripple
 npm install --omit=dev
-cp .env.example .env && nano .env    # set SMTP + AUTH_USER/AUTH_PASS at minimum
+cp .env.example .env && nano .env    # set BASE_PATH=/nameripple, SMTP + AUTH at minimum
 
 # keep it running with pm2
 npm install -g pm2
-pm2 start src/server.js --name urlscoop
+pm2 start src/server.js --name nameripple
 pm2 save && pm2 startup
 ```
 
-Nginx site (optional, for a domain + TLS via certbot):
+Nginx (TLS via certbot afterwards):
 
 ```nginx
 server {
-    server_name scoop.example.com;
-    location / {
-        proxy_pass http://127.0.0.1:3100;
+    server_name hackbed.com;
+    location /nameripple/ {
+        proxy_pass http://127.0.0.1:3100;   # no trailing path: prefix passes through
         proxy_set_header Host $host;
     }
+    location = /nameripple { return 301 /nameripple/; }
 }
 ```
+
+`BASE_PATH=/nameripple` in `.env` makes the app serve itself under that prefix,
+so nginx doesn't need to rewrite anything. Leave `BASE_PATH` empty when running
+at a domain root or locally.
 
 The daily scan runs **inside the Node process** via node-cron (`CRON_SCHEDULE`,
 default 06:15 server time) — no system crontab needed. If you'd rather use system

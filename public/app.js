@@ -1,8 +1,10 @@
 // URL Scoop frontend — vanilla JS, no build step.
 
 const $ = (sel) => document.querySelector(sel);
+// Relative URL so the app works at the domain root locally AND under a
+// subpath in production (e.g. hackbed.com/nameripple/ -> nameripple/api/...).
 const api = async (path, opts) => {
-  const res = await fetch('/api' + path, {
+  const res = await fetch('api' + path, {
     headers: { 'Content-Type': 'application/json' },
     ...opts,
   });
@@ -61,7 +63,7 @@ $('#scan-now').addEventListener('click', async () => {
 });
 
 function findChip(f) {
-  return `<span class="find available">${esc(f.domain)}<span class="src">${esc(f.source)} · ${esc((f.foundAt || '').slice(0, 10))}</span></span>`;
+  return `<span class="find available"><span class="name">${esc(f.domain)}</span><span class="src">${esc(f.source)} · ${esc((f.foundAt || '').slice(0, 10))}</span></span>`;
 }
 
 async function refreshFinds() {
@@ -166,7 +168,7 @@ function renderRipple() {
   const shown = availOnly ? rippleResults.filter((r) => r.status === 'available') : rippleResults;
   $('#ripple-results').innerHTML = shown.map((r) => {
     const cls = r.status === 'available' ? 'available' : r.status === 'registered' ? 'registered' : 'unknown';
-    return `<span class="find ${cls}">${esc(r.domain)}</span>`;
+    return `<span class="find ${cls}"><span class="name">${esc(r.domain)}</span></span>`;
   }).join('') || '<span class="quiet">No results' + (availOnly ? ' available' : '') + '.</span>';
 }
 
