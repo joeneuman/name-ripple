@@ -290,6 +290,69 @@ td.mono { letter-spacing: 0.02em; }
   color: var(--soft);
 }
 
+/* ---------- AI: generate + evaluation report ---------- */
+.ai-generate label {
+  display: block;
+  font-family: var(--ui);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--faint);
+  margin-bottom: 2px;
+}
+.section-rule {
+  font-family: var(--ui);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.09em;
+  color: var(--faint);
+  margin: 14px 0 10px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.section-rule::before, .section-rule::after {
+  content: "";
+  flex: 1;
+  border-top: 1px dashed var(--card-edge);
+}
+button.small { font-size: 12px; padding: 4px 12px 3px; }
+.row-actions { display: flex; gap: 8px; align-items: center; }
+
+.ai-report-row td { border-bottom: 1px solid var(--rule-blue); padding: 0 0 12px; }
+.ai-report {
+  font-family: var(--ui);
+  font-size: 13px;
+  background: #f3ecd9;
+  border: 1px dashed var(--card-edge);
+  border-radius: 2px;
+  padding: 12px 14px;
+  margin-top: 2px;
+}
+.ai-report p { margin: 6px 0 10px; }
+.ai-verdict {
+  font-weight: 800;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  border: 2px solid;
+  border-radius: 2px;
+  padding: 2px 7px 1px;
+  display: inline-block;
+  transform: rotate(-2deg);
+  mix-blend-mode: multiply;
+}
+.ai-verdict-strong { color: var(--stamp-green); border-color: var(--stamp-green); }
+.ai-verdict-promising { color: #3a6b1f; border-color: #3a6b1f; }
+.ai-verdict-caution { color: var(--stamp-amber); border-color: var(--stamp-amber); }
+.ai-verdict-weak { color: var(--stamp-red); border-color: var(--stamp-red); }
+.ai-crit { margin: 3px 0; }
+.ai-pass b { color: var(--stamp-green); }
+.ai-caution b { color: var(--stamp-amber); }
+.ai-fail b { color: var(--stamp-red); }
+.ai-list { margin-top: 8px; color: var(--soft); }
+
 /* ---------- Word list manager ---------- */
 #list-form { display: flex; flex-direction: column; align-items: flex-start; gap: 6px; margin-bottom: 18px; }
 #list-form input { width: 100%; max-width: 340px; }

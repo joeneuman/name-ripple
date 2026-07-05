@@ -7,6 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { get, save } from './store.js';
 import { checkDomain, checkBatch } from './checker.js';
 import { runDailyScan, scanStatus } from './scan.js';
+import { generateWordList, evaluateName } from './ai.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -74,6 +75,38 @@ route.delete('/api/lists/:id', (req, res) => {
   db.wordLists = db.wordLists.filter((l) => l.id !== Number(req.params.id));
   save();
   res.json({ ok: true });
+});
+
+// ---------- AI: prompt -> word list ----------
+route.post('/api/ai/wordlist', async (req, res) => {
+  const prompt = String(req.body.prompt || '').trim();
+  if (!prompt) return res.status(400).json({ error: 'Describe the list you want, e.g. "kitchen items"' });
+  try {
+    const { name, words } = await generateWordList(prompt);
+    if (words.length === 0) return res.status(502).json({ error: 'The AI returned no usable words — try rephrasing' });
+    const db = get();
+    const id = Math.max(0, ...db.wordLists.map((l) => l.id)) + 1;
+    const list = { id, name, words };
+    db.wordLists.push(list);
+    save();
+    res.json(list);
+  } catch (err) {
+    res.status(err.status || 502).json({ error: err.message });
+  }
+});
+
+// ---------- AI: evaluate a shortlisted name ----------
+route.post('/api/shortlist/:domain/evaluate', async (req, res) => {
+  const db = get();
+  const entry = db.shortlist.find((s) => s.domain === req.params.domain.toLowerCase());
+  if (!entry) return res.status(404).json({ error: 'Not on shortlist' });
+  try {
+    entry.ai = await evaluateName(entry.display, entry.domain);
+    save();
+    res.json(entry);
+  } catch (err) {
+    res.status(err.status || 502).json({ error: err.message });
+  }
 });
 
 // ---------- Ripple check jobs ----------

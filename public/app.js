@@ -147,6 +147,23 @@ async function refreshLists() {
   });
 }
 
+$('#ai-list-form').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const prompt = $('#ai-prompt').value.trim();
+  if (!prompt) return;
+  $('#ai-list-go').disabled = true;
+  $('#ai-list-status').textContent = 'Asking the AI for 20 words…';
+  try {
+    const list = await api('/ai/wordlist', { method: 'POST', body: JSON.stringify({ prompt }) });
+    $('#ai-list-status').textContent = `Added "${list.name}" (${list.words.length} words) — ready in the Ripple tab.`;
+    $('#ai-prompt').value = '';
+    refreshLists();
+  } catch (err) {
+    $('#ai-list-status').textContent = err.message;
+  }
+  $('#ai-list-go').disabled = false;
+});
+
 $('#list-form').addEventListener('submit', async (e) => {
   e.preventDefault();
   const words = $('#list-words').value.split('\n').map((w) => w.trim()).filter(Boolean);
@@ -248,6 +265,21 @@ $('#ripple-go').addEventListener('click', async () => {
 // ---------- Shortlist ----------
 let shortlisted = new Set();
 
+function aiReportHtml(s) {
+  if (!s.ai) return '';
+  const a = s.ai;
+  const critRow = (label, c) => `<div class="ai-crit ai-${esc(c.rating)}"><b>${label}:</b> ${esc(c.rating)} — ${esc(c.reason)}</div>`;
+  return `<tr class="ai-report-row"><td colspan="6">
+    <div class="ai-report">
+      <span class="ai-verdict ai-verdict-${esc(a.verdict)}">${esc(a.verdict)}</span>
+      <p>${esc(a.summary)}</p>
+      ${critRow('Unique', a.criteria.unique)}${critRow('Positive response', a.criteria.positive)}${critRow('Memorable', a.criteria.memorable)}
+      ${a.soundsLike?.length ? `<div class="ai-list"><b>Sounds like:</b> ${a.soundsLike.map(esc).join(' · ')}</div>` : ''}
+      ${a.risks?.length ? `<div class="ai-list"><b>Risks:</b> ${a.risks.map(esc).join(' · ')}</div>` : ''}
+    </div>
+  </td></tr>`;
+}
+
 async function refreshShortlist() {
   const list = await api('/shortlist');
   shortlisted = new Set(list.map((s) => s.domain));
@@ -259,9 +291,27 @@ async function refreshShortlist() {
       <td class="mono">${esc(s.display)}${passes === 3 ? ' <span class="all-three" title="Passes all three">✓✓✓</span>' : ''}</td>
       ${CRITERIA.map((k) => `<td><input type="checkbox" data-crit="${k}" data-domain="${esc(s.domain)}" ${s.criteria[k] ? 'checked' : ''}></td>`).join('')}
       <td>${esc((s.addedAt || '').slice(0, 10))}</td>
-      <td><button class="danger" data-unstar="${esc(s.domain)}">remove</button></td>
-    </tr>`;
+      <td class="row-actions">
+        <button class="secondary small" data-evaluate="${esc(s.domain)}">${s.ai ? 'Re-evaluate' : 'Evaluate'}</button>
+        <button class="danger" data-unstar="${esc(s.domain)}">remove</button>
+      </td>
+    </tr>${aiReportHtml(s)}`;
   }).join('') || '<tr><td colspan="6" class="quiet">Nothing starred yet — run a Ripple check and star the names that make you pause.</td></tr>';
+
+  document.querySelectorAll('#shortlist-table [data-evaluate]').forEach((btn) => {
+    btn.addEventListener('click', async () => {
+      btn.disabled = true;
+      btn.textContent = 'Evaluating…';
+      try {
+        await api('/shortlist/' + encodeURIComponent(btn.dataset.evaluate) + '/evaluate', { method: 'POST' });
+        refreshShortlist();
+      } catch (err) {
+        alert(err.message);
+        btn.disabled = false;
+        btn.textContent = 'Evaluate';
+      }
+    });
+  });
 
   document.querySelectorAll('#shortlist-table [data-crit]').forEach((box) => {
     box.addEventListener('change', async () => {
