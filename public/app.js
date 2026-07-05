@@ -162,13 +162,17 @@ $('#list-form').addEventListener('submit', async (e) => {
 
 // ---------- Ripple ----------
 let rippleResults = [];
+// Maps the checked (lowercase) domain back to its readable CapitalizedWords form,
+// e.g. "coolbyte.com" -> "CoolByte.com", so you can see which two words combined.
+let rippleDisplay = {};
+const cap = (w) => w.charAt(0).toUpperCase() + w.slice(1);
 
 function renderRipple() {
   const availOnly = $('#ripple-available-only').checked;
   const shown = availOnly ? rippleResults.filter((r) => r.status === 'available') : rippleResults;
   $('#ripple-results').innerHTML = shown.map((r) => {
     const cls = r.status === 'available' ? 'available' : r.status === 'registered' ? 'registered' : 'unknown';
-    return `<span class="find ${cls}"><span class="name">${esc(r.domain)}</span></span>`;
+    return `<span class="find ${cls}"><span class="name">${esc(rippleDisplay[r.domain] || r.domain)}</span></span>`;
   }).join('') || '<span class="quiet">No results' + (availOnly ? ' available' : '') + '.</span>';
 }
 
@@ -181,8 +185,14 @@ $('#ripple-go').addEventListener('click', async () => {
   if (!first || !second) return alert('Pick both word lists');
 
   // The original Name Ripple combination logic: First+Second, concatenated, plus TLD.
+  // Checked lowercase (DNS is case-insensitive); displayed as CapitalizedWords for readability.
   const combos = [];
-  for (const a of first.words) for (const b of second.words) combos.push((a + b + tld).toLowerCase());
+  rippleDisplay = {};
+  for (const a of first.words) for (const b of second.words) {
+    const lower = (a + b + tld).toLowerCase();
+    combos.push(lower);
+    rippleDisplay[lower] = cap(a) + cap(b) + tld;
+  }
 
   $('#ripple-go').disabled = true;
   $('#ripple-progress').textContent = `Checking ${combos.length} combinations…`;
