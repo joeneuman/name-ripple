@@ -290,5 +290,5 @@ cron.schedule(schedule, () => {
 
 const port = Number(process.env.PORT) || 3100;
 app.listen(port, () => {
-  console.log(`URL Scoop running on http://localhost:${port}${BASE || ''} — daily scan at cron "${schedule}"`);
+  console.log(`Name Ripple running on http://localhost:${port}${BASE || ''} — daily scan at cron "${schedule}"`);
 });

@@ -24,9 +24,9 @@ export async function sendDigest({ fresh, watchlistChanges }, env = process.env)
     .join('');
 
   await transporter.sendMail({
-    from: env.DIGEST_FROM || 'URL Scoop <scoop@localhost>',
+    from: env.DIGEST_FROM || 'Name Ripple <scoop@localhost>',
     to: env.DIGEST_TO,
-    subject: `URL Scoop: ${fresh.length} available domain${fresh.length === 1 ? '' : 's'} found${watchlistChanges.length ? ' — WATCHLIST DROP!' : ''}`,
+    subject: `Name Ripple: ${fresh.length} available domain${fresh.length === 1 ? '' : 's'} found${watchlistChanges.length ? ' — WATCHLIST DROP!' : ''}`,
     html: `${watchlistBlock}${findsBlock}
       <p style="color:#888;font-size:12px">Confirmed via registry RDAP. Register fast — drops get re-caught quickly.</p>`,
   });

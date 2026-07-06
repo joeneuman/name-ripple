@@ -201,6 +201,38 @@ let rippleResults = [];
 let rippleDisplay = {};
 const cap = (w) => w.charAt(0).toUpperCase() + w.slice(1);
 
+// Persist the last Word Combo search so it survives a reload.
+function saveLastSearch(note) {
+  try {
+    localStorage.setItem('ripple:last', JSON.stringify({
+      firstId: $('#ripple-first').value,
+      secondId: $('#ripple-second').value,
+      tld: $('#ripple-tld').value,
+      maxLen: $('#ripple-maxlen').value,
+      results: rippleResults,
+      display: rippleDisplay,
+      note,
+    }));
+  } catch { /* storage full or blocked — ignore */ }
+}
+
+function restoreLastSearch() {
+  let saved;
+  try { saved = JSON.parse(localStorage.getItem('ripple:last')); } catch { return; }
+  if (!saved || !Array.isArray(saved.results)) return;
+  // Only restore selections whose lists still exist
+  if (wordLists.some((l) => String(l.id) === saved.firstId)) $('#ripple-first').value = saved.firstId;
+  if (wordLists.some((l) => String(l.id) === saved.secondId)) $('#ripple-second').value = saved.secondId;
+  if (saved.tld) $('#ripple-tld').value = saved.tld;
+  if (saved.maxLen != null) $('#ripple-maxlen').value = saved.maxLen;
+  rippleResults = saved.results;
+  rippleDisplay = saved.display || {};
+  renderRipple();
+  const avail = rippleResults.filter((r) => r.status === 'available').length;
+  $('#ripple-progress').textContent = saved.note || `Last search — ${avail} available.`;
+  $('#ripple-pick').hidden = avail === 0;
+}
+
 function renderRipple() {
   const availOnly = $('#ripple-available-only').checked;
   const shown = availOnly ? rippleResults.filter((r) => r.status === 'available') : rippleResults;
@@ -295,6 +327,7 @@ $('#ripple-go').addEventListener('click', async () => {
           const avail = rippleResults.filter((r) => r.status === 'available').length;
           $('#ripple-progress').textContent = `✓ Done — checked ${job.total}, ${avail} available.`;
           $('#ripple-pick').hidden = avail === 0;
+          saveLastSearch(`✓ Last search — checked ${job.total}, ${avail} available.`);
         } else {
           // Stream available names in as they're confirmed; show which phase we're in.
           const live = (job.liveFinds || []).map((d) => ({ domain: d, status: 'available' }));
@@ -419,7 +452,7 @@ $('#signout-btn').addEventListener('click', async () => {
 // ---------- Boot ----------
 refreshFinds();
 refreshScanLog();
-refreshLists();
+refreshLists().then(restoreLastSearch);
 refreshShortlist();
 refreshMe();
 refreshScanStatus();
