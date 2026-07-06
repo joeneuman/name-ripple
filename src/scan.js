@@ -11,7 +11,7 @@ let progress = { phase: 'idle', done: 0, total: 0 };
 let liveFinds = []; // finds confirmed so far in the currently running scan
 
 export function scanStatus() {
-  return { running, ...progress, finds: liveFinds };
+  return { running, ...progress, finds: liveFinds, lastScanAt: get().scanLog[0]?.at || null };
 }
 
 export async function runDailyScan(env = process.env) {

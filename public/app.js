@@ -53,7 +53,7 @@ async function refreshScanStatus() {
     const s = await api('/scan/status');
     $('#scan-status').textContent = s.running
       ? `Running: ${s.phase} — ${s.done.toLocaleString()} / ${s.total.toLocaleString()}`
-      : 'Idle. Next run per server cron schedule.';
+      : `Idle. Last scan: ${s.lastScanAt ? new Date(s.lastScanAt).toLocaleString() : 'never'}. Runs automatically once a day.`;
     $('#scan-now').disabled = s.running;
 
     if (s.running) {

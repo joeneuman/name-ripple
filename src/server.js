@@ -233,6 +233,12 @@ route.get('/api/scan/status', (req, res) => res.json(scanStatus()));
 route.post('/api/scan/run', (req, res) => {
   const status = scanStatus();
   if (status.running) return res.status(409).json({ error: 'Scan already running' });
+  const COOLDOWN_MS = 4 * 60 * 60 * 1000;
+  const sinceLast = status.lastScanAt ? Date.now() - new Date(status.lastScanAt).getTime() : Infinity;
+  if (sinceLast < COOLDOWN_MS) {
+    const mins = Math.ceil((COOLDOWN_MS - sinceLast) / 60000);
+    return res.status(429).json({ error: `Scans are limited to one every 4 hours — try again in ${mins} minute${mins === 1 ? '' : 's'}.` });
+  }
   runDailyScan().catch((err) => console.error('manual scan failed:', err));
   res.json({ started: true });
 });
