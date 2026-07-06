@@ -7,7 +7,7 @@ import { fileURLToPath } from 'node:url';
 import { get, save } from './store.js';
 import { checkDomain, checkBatch } from './checker.js';
 import { runDailyScan, scanStatus } from './scan.js';
-import { generateWordList, evaluateName } from './ai.js';
+import { generateWordList, evaluateName, pickNames } from './ai.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -104,6 +104,36 @@ route.post('/api/shortlist/:domain/evaluate', async (req, res) => {
     entry.ai = await evaluateName(entry.display, entry.domain);
     save();
     res.json(entry);
+  } catch (err) {
+    res.status(err.status || 502).json({ error: err.message });
+  }
+});
+
+// ---------- AI: pick shortlist-worthy names from ripple results ----------
+route.post('/api/ripple/pick', async (req, res) => {
+  const candidates = (req.body.candidates || [])
+    .map((c) => ({ domain: String(c.domain || '').toLowerCase(), display: String(c.display || c.domain || '') }))
+    .filter((c) => /^[a-z0-9-]+\.[a-z]{2,}$/.test(c.domain));
+  if (candidates.length === 0) return res.status(400).json({ error: 'No available names to pick from' });
+  if (candidates.length > 300) return res.status(400).json({ error: 'Too many candidates (max 300)' });
+  try {
+    const picks = await pickNames(candidates);
+    const db = get();
+    const added = [];
+    for (const pick of picks) {
+      const c = candidates.find((x) => x.display.toLowerCase() === pick.name.toLowerCase() || x.domain === pick.name.toLowerCase());
+      if (!c || db.shortlist.some((s) => s.domain === c.domain)) continue;
+      db.shortlist.unshift({
+        domain: c.domain,
+        display: c.display,
+        addedAt: new Date().toISOString(),
+        criteria: { unique: false, positive: false, memorable: false },
+        pickReason: pick.reason,
+      });
+      added.push({ display: c.display, reason: pick.reason });
+    }
+    save();
+    res.json({ added, considered: candidates.length });
   } catch (err) {
     res.status(err.status || 502).json({ error: err.message });
   }

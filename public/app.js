@@ -215,6 +215,30 @@ function renderRipple() {
 
 $('#ripple-available-only').addEventListener('change', renderRipple);
 
+$('#ripple-pick').addEventListener('click', async () => {
+  const candidates = rippleResults
+    .filter((r) => r.status === 'available')
+    .map((r) => ({ domain: r.domain, display: rippleDisplay[r.domain] || r.domain }));
+  const btn = $('#ripple-pick');
+  btn.disabled = true;
+  btn.textContent = 'Picking…';
+  try {
+    const { added, considered } = await api('/ripple/pick', {
+      method: 'POST',
+      body: JSON.stringify({ candidates }),
+    });
+    $('#ripple-progress').textContent = added.length
+      ? `AI shortlisted ${added.length} of ${considered}: ${added.map((a) => a.display).join(', ')} — see Shortlist below.`
+      : `AI looked at all ${considered} and shortlisted none — none stood out.`;
+    await refreshShortlist();
+    renderRipple();
+  } catch (err) {
+    alert(err.message);
+  }
+  btn.disabled = false;
+  btn.textContent = 'AI pick the best';
+});
+
 $('#ripple-go').addEventListener('click', async () => {
   const first = wordLists.find((l) => l.id === Number($('#ripple-first').value));
   const second = wordLists.find((l) => l.id === Number($('#ripple-second').value));
@@ -254,6 +278,7 @@ $('#ripple-go').addEventListener('click', async () => {
           $('#ripple-go').disabled = false;
           rippleResults = (job.results || []).sort((a, b) => (a.status === 'available' ? -1 : 1) - (b.status === 'available' ? -1 : 1));
           renderRipple();
+          $('#ripple-pick').hidden = !rippleResults.some((r) => r.status === 'available');
         }
       } catch (err) {
         clearInterval(poll);
@@ -293,7 +318,7 @@ async function refreshShortlist() {
   $('#shortlist-table tbody').innerHTML = list.map((s) => {
     const passes = CRITERIA.filter((k) => s.criteria[k]).length;
     return `<tr>
-      <td class="mono">${esc(s.display)}${passes === 3 ? ' <span class="all-three" title="Passes all three">✓✓✓</span>' : ''}</td>
+      <td class="mono">${esc(s.display)}${passes === 3 ? ' <span class="all-three" title="Passes all three">✓✓✓</span>' : ''}${s.pickReason ? `<div class="pick-reason">AI pick: ${esc(s.pickReason)}</div>` : ''}</td>
       ${CRITERIA.map((k) => `<td><input type="checkbox" data-crit="${k}" data-domain="${esc(s.domain)}" ${s.criteria[k] ? 'checked' : ''}></td>`).join('')}
       <td>${esc((s.addedAt || '').slice(0, 10))}</td>
       <td class="row-actions">

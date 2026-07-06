@@ -61,6 +61,47 @@ Rules:
   };
 }
 
+const PICK_SCHEMA = {
+  type: 'object',
+  properties: {
+    picks: {
+      type: 'array',
+      items: {
+        type: 'object',
+        properties: {
+          name: { type: 'string', description: 'Exactly as given in the candidate list' },
+          reason: { type: 'string', description: 'One short sentence: why this one stands out' },
+        },
+        required: ['name', 'reason'],
+        additionalProperties: false,
+      },
+    },
+  },
+  required: ['picks'],
+  additionalProperties: false,
+};
+
+export async function pickNames(candidates) {
+  const response = await getClient().messages.create({
+    model: MODEL,
+    max_tokens: 4096,
+    thinking: { type: 'adaptive' },
+    output_config: { format: { type: 'json_schema', schema: PICK_SCHEMA } },
+    messages: [{
+      role: 'user',
+      content: `These domain names are all available to register. Pick the ones worth shortlisting as potential business names — the standouts, not a quota. Usually 3-5; zero is a valid answer if none are good.
+
+Judge by: unique (no brand confusion), invokes a positive response when said aloud (no bad sound-alikes — "Realzy" failed because people heard "Sleazy"), and memorable (rhythm, easy to repeat after one hearing).
+
+Candidates:
+${candidates.map((c) => c.display).join('\n')}
+
+Return each pick's name exactly as written above.`,
+    }],
+  });
+  return parseJsonBlock(response).picks;
+}
+
 const EVAL_SCHEMA = {
   type: 'object',
   properties: {
