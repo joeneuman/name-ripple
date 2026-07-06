@@ -1,9 +1,13 @@
-import 'dotenv/config';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import dotenv from 'dotenv';
+// Load .env from the app folder, not the process's working directory,
+// so the app behaves the same no matter where it's launched from.
+dotenv.config({ path: path.join(path.dirname(fileURLToPath(import.meta.url)), '..', '.env') });
+
 import express from 'express';
 import cron from 'node-cron';
-import path from 'node:path';
 import crypto from 'node:crypto';
-import { fileURLToPath } from 'node:url';
 import { get, save } from './store.js';
 import { checkDomain, checkBatch } from './checker.js';
 import { runDailyScan, scanStatus } from './scan.js';
