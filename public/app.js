@@ -47,6 +47,7 @@ $('#quickcheck-form').addEventListener('submit', async (e) => {
   }
 });
 
+let scanWasRunning = false;
 async function refreshScanStatus() {
   try {
     const s = await api('/scan/status');
@@ -54,6 +55,13 @@ async function refreshScanStatus() {
       ? `Running: ${s.phase} — ${s.done.toLocaleString()} / ${s.total.toLocaleString()}`
       : 'Idle. Next run per server cron schedule.';
     $('#scan-now').disabled = s.running;
+    // When a scan finishes, pull in its results without needing a page refresh
+    if (scanWasRunning && !s.running) {
+      refreshFinds();
+      refreshScanLog();
+      refreshWatchlist();
+    }
+    scanWasRunning = s.running;
   } catch { /* server restarting */ }
 }
 
