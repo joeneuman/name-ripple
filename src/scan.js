@@ -8,14 +8,16 @@ import { sendDigest } from './mailer.js';
 
 let running = false;
 let progress = { phase: 'idle', done: 0, total: 0 };
+let liveFinds = []; // finds confirmed so far in the currently running scan
 
 export function scanStatus() {
-  return { running, ...progress };
+  return { running, ...progress, finds: liveFinds };
 }
 
 export async function runDailyScan(env = process.env) {
   if (running) return { skipped: true, reason: 'scan already running' };
   running = true;
+  liveFinds = [];
   const started = Date.now();
   const db = get();
   const newFinds = [];
@@ -31,6 +33,7 @@ export async function runDailyScan(env = process.env) {
       if (result.status === 'available' && prev !== 'available') {
         watchlistChanges.push(entry.domain);
         newFinds.push({ domain: entry.domain, source: 'watchlist', foundAt: new Date().toISOString() });
+        liveFinds.push({ domain: entry.domain, source: 'watchlist' });
       }
       progress.done++;
       await sleep(300);
@@ -45,6 +48,7 @@ export async function runDailyScan(env = process.env) {
       const results = await checkBatch(domains, {
         dnsConcurrency: Number(env.DNS_CONCURRENCY) || 50,
         onProgress: (d, t) => (progress = { phase: '3-letter sweep', done: d, total: t }),
+        onFind: (domain) => liveFinds.push({ domain, source: '3-letter' }),
       });
       for (const r of results) {
         if (r.status === 'available') newFinds.push({ domain: r.domain, source: '3-letter', foundAt: new Date().toISOString() });
@@ -58,6 +62,7 @@ export async function runDailyScan(env = process.env) {
     const fourResults = await checkBatch(fourDomains, {
       dnsConcurrency: Number(env.DNS_CONCURRENCY) || 50,
       onProgress: (d, t) => (progress = { phase: '4-letter slice', done: d, total: t }),
+      onFind: (domain) => liveFinds.push({ domain, source: '4-letter' }),
     });
     db.fourLetterCursor = nextCursor;
     for (const r of fourResults) {
@@ -71,6 +76,7 @@ export async function runDailyScan(env = process.env) {
     const fiveResults = await checkBatch(fiveDomains, {
       dnsConcurrency: Number(env.DNS_CONCURRENCY) || 50,
       onProgress: (d, t) => (progress = { phase: '5-letter brandables', done: d, total: t }),
+      onFind: (domain) => liveFinds.push({ domain, source: '5-letter' }),
     });
     for (const r of fiveResults) {
       if (r.status === 'available') newFinds.push({ domain: r.domain, source: '5-letter', foundAt: new Date().toISOString() });
@@ -105,5 +111,6 @@ export async function runDailyScan(env = process.env) {
   } finally {
     running = false;
     progress = { phase: 'idle', done: 0, total: 0 };
+    liveFinds = [];
   }
 }

@@ -55,7 +55,15 @@ async function refreshScanStatus() {
       ? `Running: ${s.phase} — ${s.done.toLocaleString()} / ${s.total.toLocaleString()}`
       : 'Idle. Next run per server cron schedule.';
     $('#scan-now').disabled = s.running;
-    // When a scan finishes, pull in its results without needing a page refresh
+
+    if (s.running) {
+      // Live view: finds appear here the moment the registry confirms them
+      const live = (s.finds || []).map((f) => findChip({ ...f, foundAt: '' })).join('');
+      $('#finds-count').textContent = (s.finds || []).length;
+      $('#finds').innerHTML =
+        `<div class="scanning">Scanning — available domains appear here as they're found…</div>` + live;
+    }
+    // When a scan finishes, pull in the saved results
     if (scanWasRunning && !s.running) {
       refreshFinds();
       refreshScanLog();

@@ -247,6 +247,16 @@ td.mono { letter-spacing: 0.02em; }
 }
 .num-input { width: 64px; padding: 5px 8px; }
 .pick-reason { font-family: var(--ui); font-size: 12px; color: var(--soft); margin-top: 2px; }
+.scanning {
+  width: 100%;
+  font-family: var(--ui);
+  font-size: 13px;
+  color: var(--brass-deep);
+  padding: 8px 0;
+  animation: scanning-pulse 1.6s ease-in-out infinite;
+}
+@keyframes scanning-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.45; } }
+@media (prefers-reduced-motion: reduce) { .scanning { animation: none; } }
 
 /* ---------- Shortlist stars ---------- */
 .star {
