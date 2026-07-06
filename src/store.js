@@ -8,10 +8,10 @@ const DATA_DIR = path.join(__dirname, '..', 'data');
 const DB_PATH = path.join(DATA_DIR, 'db.json');
 
 const DEFAULTS = {
-  watchlist: [
-    // domain, note, addedAt, lastCheck: {at, status, registrar, expires}
-    { domain: 'atozion.com', note: 'Old Greater Zion tourism brand — waiting for it to drop', addedAt: null, lastCheck: null },
-  ],
+  // Signed-in users, keyed by Google account id (sub): {email, name, picture, createdAt, lastLogin}
+  users: {},
+  // Watched domains, per user id. Each entry: {domain, note, addedAt, lastCheck}
+  watchlists: {},
   wordLists: [
     { id: 1, name: 'Adjectives', words: ['cool','awesome','smart','bright','quick','easy','fresh','good','happy','swift','clever','bold','prime','super','ultra'] },
     { id: 2, name: 'Tech Words', words: ['tech','code','app','web','dev','byte','data','cloud','cyber','net','bit','soft','stack','node','api'] },

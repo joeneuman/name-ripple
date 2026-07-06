@@ -12,15 +12,27 @@ import { get, save } from './store.js';
 import { checkDomain, checkBatch } from './checker.js';
 import { runDailyScan, scanStatus } from './scan.js';
 import { generateWordList, evaluateName, pickNames } from './ai.js';
+import cookieSession from 'cookie-session';
+import { mountAuth, requireAuth, currentUser } from './auth.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
+app.set('trust proxy', 1); // we sit behind nginx; needed for secure cookies + real IP
 app.use(express.json({ limit: '2mb' }));
 
 // Serve under a subpath (e.g. BASE_PATH=/nameripple behind nginx at hackbed.com/nameripple).
 // All routes below are defined on `route` and mounted at BASE. Frontend uses relative URLs.
 const BASE = (process.env.BASE_PATH || '').replace(/\/+$/, '');
 const route = express.Router();
+
+// Signed-cookie session (survives restarts; no server-side store needed)
+app.use(cookieSession({
+  name: 'urlscoop_session',
+  keys: [process.env.SESSION_SECRET || 'dev-insecure-change-me'],
+  maxAge: 30 * 24 * 60 * 60 * 1000, // 30 days
+  sameSite: 'lax',
+  secure: (process.env.PUBLIC_URL || '').startsWith('https'),
+}));
 
 // Optional basic auth (set AUTH_USER/AUTH_PASS in .env before exposing publicly)
 if (process.env.AUTH_USER) {
@@ -34,28 +46,36 @@ if (process.env.AUTH_USER) {
 
 route.use(express.static(path.join(__dirname, '..', 'public')));
 
-// ---------- Watchlist ----------
-route.get('/api/watchlist', (req, res) => res.json(get().watchlist));
+// ---------- Auth (Google sign-in) ----------
+mountAuth(route, BASE);
 
-route.post('/api/watchlist', async (req, res) => {
+// ---------- Watchlist (per signed-in user) ----------
+route.get('/api/watchlist', requireAuth, (req, res) => {
+  res.json(get().watchlists[currentUser(req).id] || []);
+});
+
+route.post('/api/watchlist', requireAuth, async (req, res) => {
   const domain = String(req.body.domain || '').trim().toLowerCase();
   if (!/^[a-z0-9-]+\.[a-z]{2,}$/.test(domain)) return res.status(400).json({ error: 'Enter a valid domain like atozion.com' });
   const db = get();
-  if (db.watchlist.some((w) => w.domain === domain)) return res.status(409).json({ error: 'Already watching that domain' });
+  const uid = currentUser(req).id;
+  const list = (db.watchlists[uid] ??= []);
+  if (list.some((w) => w.domain === domain)) return res.status(409).json({ error: 'Already watching that domain' });
   const entry = { domain, note: String(req.body.note || ''), addedAt: new Date().toISOString(), lastCheck: null };
-  // Check it immediately so the row is never blank
   entry.lastCheck = { at: new Date().toISOString(), ...(await checkDomain(domain)) };
-  db.watchlist.push(entry);
+  list.push(entry);
   save();
   res.json(entry);
 });
 
-route.delete('/api/watchlist/:domain', (req, res) => {
+route.delete('/api/watchlist/:domain', requireAuth, (req, res) => {
   const db = get();
-  const before = db.watchlist.length;
-  db.watchlist = db.watchlist.filter((w) => w.domain !== req.params.domain.toLowerCase());
+  const uid = currentUser(req).id;
+  const list = db.watchlists[uid] || [];
+  const before = list.length;
+  db.watchlists[uid] = list.filter((w) => w.domain !== req.params.domain.toLowerCase());
   save();
-  res.json({ removed: before - db.watchlist.length });
+  res.json({ removed: before - db.watchlists[uid].length });
 });
 
 // ---------- Word lists (Name Ripple) ----------
@@ -236,7 +256,7 @@ route.get('/api/finds', (req, res) => res.json(get().finds.slice(0, 500)));
 route.get('/api/scanlog', (req, res) => res.json(get().scanLog));
 route.get('/api/scan/status', (req, res) => res.json(scanStatus()));
 
-route.post('/api/scan/run', (req, res) => {
+route.post('/api/scan/run', requireAuth, (req, res) => {
   const status = scanStatus();
   if (status.running) return res.status(409).json({ error: 'Scan already running' });
   const COOLDOWN_MS = 4 * 60 * 60 * 1000;

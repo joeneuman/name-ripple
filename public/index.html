@@ -12,8 +12,15 @@
   <p class="tagline">Daily drop-watcher &amp; Name Ripple combo checker</p>
   <nav>
     <button data-tab="ripple" class="active">Ripple</button>
-    <button data-tab="scan">Daily Scan</button>
+    <button data-tab="scan" id="tab-btn-scan" hidden>Daily Scan</button>
     <button data-tab="guide">Guide</button>
+    <span class="nav-spacer"></span>
+    <a id="signin-btn" class="signin" href="auth/google" hidden>Sign in with Google</a>
+    <span id="account" class="account" hidden>
+      <img id="account-pic" alt="">
+      <span id="account-name"></span>
+      <button id="signout-btn" class="linkbtn">sign out</button>
+    </span>
   </nav>
 </header>
 

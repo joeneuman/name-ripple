@@ -103,6 +103,7 @@ async function refreshScanLog() {
 
 // ---------- Watchlist ----------
 async function refreshWatchlist() {
+  if (me.authConfigured && !me.user) return; // not signed in — nothing to load
   const list = await api('/watchlist');
   $('#watchlist-table tbody').innerHTML = list.map((w) => {
     const lc = w.lastCheck || {};
@@ -387,11 +388,39 @@ async function refreshShortlist() {
   });
 }
 
+// ---------- Auth / account ----------
+let me = { user: null, authConfigured: false };
+
+async function refreshMe() {
+  try { me = await api('/me'); } catch { me = { user: null, authConfigured: false }; }
+  const signedIn = !!me.user;
+  // When Google isn't configured, there's no sign-in gate — show everything.
+  const gated = me.authConfigured && !signedIn;
+
+  $('#tab-btn-scan').hidden = gated;
+  $('#signin-btn').hidden = !gated;
+  $('#account').hidden = !(signedIn && me.user.email);
+  if (signedIn && me.user.email) {
+    $('#account-name').textContent = me.user.name || me.user.email;
+    if (me.user.picture) $('#account-pic').src = me.user.picture; else $('#account-pic').hidden = true;
+  }
+  // If a gated user is somehow on the Daily Scan tab, bounce them to Ripple
+  if (gated && document.querySelector('#tab-scan').classList.contains('active')) {
+    document.querySelector('nav button[data-tab="ripple"]').click();
+  }
+  if (signedIn || !me.authConfigured) { refreshWatchlist(); }
+}
+
+$('#signout-btn').addEventListener('click', async () => {
+  await api('/auth/logout', { method: 'POST' });
+  location.reload();
+});
+
 // ---------- Boot ----------
 refreshFinds();
 refreshScanLog();
-refreshWatchlist();
 refreshLists();
 refreshShortlist();
+refreshMe();
 refreshScanStatus();
 setInterval(refreshScanStatus, 5000);

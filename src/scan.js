@@ -24,19 +24,31 @@ export async function runDailyScan(env = process.env) {
   const watchlistChanges = [];
 
   try {
-    // --- 1. Watchlist: authoritative RDAP on every entry (small list, direct) ---
-    progress = { phase: 'watchlist', done: 0, total: db.watchlist.length };
-    for (const entry of db.watchlist) {
-      const prev = entry.lastCheck?.status;
-      const result = await rdapCheck(entry.domain);
-      entry.lastCheck = { at: new Date().toISOString(), ...result };
-      if (result.status === 'available' && prev !== 'available') {
-        watchlistChanges.push(entry.domain);
-        newFinds.push({ domain: entry.domain, source: 'watchlist', foundAt: new Date().toISOString() });
-        liveFinds.push({ domain: entry.domain, source: 'watchlist' });
-      }
+    // --- 1. Watchlist: every user's watched domains, authoritative RDAP ---
+    // Each unique domain is RDAP-checked once, then the result is written to every
+    // user watching it. Drops are collected per user for their own email digest.
+    const dropsByUser = {}; // userId -> [domains]
+    const allEntries = [];
+    for (const [uid, list] of Object.entries(db.watchlists || {})) {
+      for (const entry of list) allEntries.push({ uid, entry });
+    }
+    const uniqueDomains = [...new Set(allEntries.map((e) => e.entry.domain))];
+    progress = { phase: 'watchlist', done: 0, total: uniqueDomains.length };
+    const resultByDomain = {};
+    for (const domain of uniqueDomains) {
+      resultByDomain[domain] = await rdapCheck(domain);
       progress.done++;
       await sleep(300);
+    }
+    for (const { uid, entry } of allEntries) {
+      const prev = entry.lastCheck?.status;
+      const result = resultByDomain[entry.domain];
+      entry.lastCheck = { at: new Date().toISOString(), ...result };
+      if (result.status === 'available' && prev !== 'available') {
+        (dropsByUser[uid] ??= []).push(entry.domain);
+        watchlistChanges.push(entry.domain);
+        liveFinds.push({ domain: entry.domain, source: 'watchlist' });
+      }
     }
 
     // --- 2. Three-letter full sweep (drop-catching lottery) ---
@@ -90,7 +102,7 @@ export async function runDailyScan(env = process.env) {
 
     db.scanLog.unshift({
       at: new Date().toISOString(),
-      watchlistChecked: db.watchlist.length,
+      watchlistChecked: uniqueDomains.length,
       threeChecked,
       fourChecked: fourDomains.length,
       fiveChecked: fiveDomains.length,
@@ -100,9 +112,16 @@ export async function runDailyScan(env = process.env) {
     if (db.scanLog.length > 90) db.scanLog.length = 90;
     save();
 
-    // --- Digest ---
-    if (fresh.length > 0 || watchlistChanges.length > 0) {
-      await sendDigest({ fresh, watchlistChanges }, env).catch((err) =>
+    // --- Email: each user gets their own watchlist drops; generic finds go to DIGEST_TO ---
+    for (const [uid, domains] of Object.entries(dropsByUser)) {
+      const email = db.users[uid]?.email;
+      if (email) {
+        await sendDigest({ fresh: [], watchlistChanges: domains }, { ...env, DIGEST_TO: email })
+          .catch((err) => console.error('user digest failed:', err.message));
+      }
+    }
+    if (fresh.length > 0) {
+      await sendDigest({ fresh, watchlistChanges: [] }, env).catch((err) =>
         console.error('digest send failed:', err.message)
       );
     }
