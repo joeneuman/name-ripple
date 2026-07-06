@@ -93,7 +93,7 @@ export async function checkDomain(domain) {
  * few candidates gently (serial with a small delay — registries rate-limit).
  * onProgress(done, total) is optional.
  */
-export async function checkBatch(domains, { dnsConcurrency = 50, onProgress, onFind } = {}) {
+export async function checkBatch(domains, { dnsConcurrency = 50, onProgress, onFind, onConfirm } = {}) {
   const results = new Map();
   let done = 0;
 
@@ -112,10 +112,13 @@ export async function checkBatch(domains, { dnsConcurrency = 50, onProgress, onF
 
   // Stage 2: RDAP confirm candidates
   const candidates = [...results.values()].filter((r) => r.status === 'candidate');
+  let confirmed = 0;
   for (const c of candidates) {
     const rdap = await rdapCheck(c.domain);
     results.set(c.domain, { domain: c.domain, ...rdap, via: 'rdap' });
     if (rdap.status === 'available') onFind?.(c.domain);
+    confirmed++;
+    onConfirm?.(confirmed, candidates.length);
     await sleep(250); // be polite to the registry
   }
 

@@ -286,15 +286,25 @@ $('#ripple-go').addEventListener('click', async () => {
     const poll = setInterval(async () => {
       try {
         const job = await api('/ripple/jobs/' + jobId);
-        $('#ripple-progress').textContent = job.finished
-          ? `Done — ${job.results.filter((r) => r.status === 'available').length} available of ${job.total}`
-          : `Checking… ${job.done} / ${job.total} (then RDAP-confirming candidates)`;
         if (job.finished) {
           clearInterval(poll);
           $('#ripple-go').disabled = false;
           rippleResults = (job.results || []).sort((a, b) => (a.status === 'available' ? -1 : 1) - (b.status === 'available' ? -1 : 1));
           renderRipple();
-          $('#ripple-pick').hidden = !rippleResults.some((r) => r.status === 'available');
+          const avail = rippleResults.filter((r) => r.status === 'available').length;
+          $('#ripple-progress').textContent = `✓ Done — checked ${job.total}, ${avail} available.`;
+          $('#ripple-pick').hidden = avail === 0;
+        } else {
+          // Stream available names in as they're confirmed; show which phase we're in.
+          const live = (job.liveFinds || []).map((d) => ({ domain: d, status: 'available' }));
+          const liveKeys = new Set(live.map((r) => r.domain));
+          rippleResults = live.concat(
+            rippleResults.filter((r) => r.status !== 'available' || !liveKeys.has(r.domain))
+          );
+          renderRipple();
+          $('#ripple-progress').textContent = job.phase === 'confirm'
+            ? `Confirming availability… ${job.confirmDone} / ${job.confirmTotal} candidates · ${job.liveFinds.length} available so far`
+            : `Scanning names… ${job.done} / ${job.total}`;
         }
       } catch (err) {
         clearInterval(poll);

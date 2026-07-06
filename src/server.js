@@ -160,12 +160,18 @@ route.post('/api/ripple/jobs', (req, res) => {
   if (domains.length > 5000) return res.status(400).json({ error: 'Max 5000 combos per run' });
 
   const id = crypto.randomUUID();
-  const job = { id, total: domains.length, done: 0, results: [], finished: false, startedAt: Date.now() };
+  const job = {
+    id, total: domains.length, done: 0,
+    phase: 'dns', confirmDone: 0, confirmTotal: 0,
+    liveFinds: [], results: [], finished: false, startedAt: Date.now(),
+  };
   jobs.set(id, job);
 
   checkBatch(domains, {
     dnsConcurrency: 25,
     onProgress: (done) => (job.done = done),
+    onConfirm: (done, total) => { job.phase = 'confirm'; job.confirmDone = done; job.confirmTotal = total; },
+    onFind: (domain) => job.liveFinds.push(domain),
   })
     .then((results) => {
       job.results = results;
