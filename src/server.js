@@ -67,6 +67,9 @@ route.post('/api/lists', (req, res) => {
     return res.status(400).json({ error: 'Need a list name and at least one word' });
   }
   const db = get();
+  if (db.wordLists.some((l) => l.name.toLowerCase() === name.trim().toLowerCase())) {
+    return res.status(409).json({ error: `A list named "${name.trim()}" already exists — delete it first.` });
+  }
   const id = Math.max(0, ...db.wordLists.map((l) => l.id)) + 1;
   const list = { id, name: name.trim(), words: words.map((w) => String(w).trim().toLowerCase()).filter(Boolean) };
   db.wordLists.push(list);
@@ -89,6 +92,9 @@ route.post('/api/ai/wordlist', async (req, res) => {
     const { name, words } = await generateWordList(prompt);
     if (words.length === 0) return res.status(502).json({ error: 'The AI returned no usable words — try rephrasing' });
     const db = get();
+    if (db.wordLists.some((l) => l.name.toLowerCase() === name.toLowerCase())) {
+      return res.status(409).json({ error: `A list named "${name}" already exists — delete it first or ask for something different.` });
+    }
     const id = Math.max(0, ...db.wordLists.map((l) => l.id)) + 1;
     const list = { id, name, words };
     db.wordLists.push(list);
